@@ -1,0 +1,15 @@
+.App-logo {
+    margin: 10vh 0;
+    width: 50vw;
+    padding: 0 5vw;
+    pointer-events: none;
+}
+
+.App-logo svg {
+    max-height: 100%;
+    max-width: 100%;
+}
+
+.logo-header {
+    color: white;
+}
