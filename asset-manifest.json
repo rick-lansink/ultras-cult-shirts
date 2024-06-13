@@ -1,16 +1,16 @@
 {
   "files": {
     "main.css": "/ultras-cult-shirts/static/css/main.49a4251c.css",
-    "main.js": "/ultras-cult-shirts/static/js/main.5eb1896b.js",
+    "main.js": "/ultras-cult-shirts/static/js/main.a59bd775.js",
     "static/js/453.5c4fd2ba.chunk.js": "/ultras-cult-shirts/static/js/453.5c4fd2ba.chunk.js",
     "static/media/ultras-cult-shirt.svg": "/ultras-cult-shirts/static/media/ultras-cult-shirt.d198547e7859a44be29b4b5b85adecc4.svg",
     "index.html": "/ultras-cult-shirts/index.html",
     "main.49a4251c.css.map": "/ultras-cult-shirts/static/css/main.49a4251c.css.map",
-    "main.5eb1896b.js.map": "/ultras-cult-shirts/static/js/main.5eb1896b.js.map",
+    "main.a59bd775.js.map": "/ultras-cult-shirts/static/js/main.a59bd775.js.map",
     "453.5c4fd2ba.chunk.js.map": "/ultras-cult-shirts/static/js/453.5c4fd2ba.chunk.js.map"
   },
   "entrypoints": [
     "static/css/main.49a4251c.css",
-    "static/js/main.5eb1896b.js"
+    "static/js/main.a59bd775.js"
   ]
 }
