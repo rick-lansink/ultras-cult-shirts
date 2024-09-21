@@ -1,8 +1,11 @@
 {
   "name": "shirt-generator",
   "version": "0.1.0",
+  "homepage": "https://rick-lansink.github.io/ultras-cult-shirts",
   "private": true,
   "dependencies": {
+    "@rpldy/upload-paste": "^1.8.1",
+    "@rpldy/uploady": "^1.8.1",
     "@testing-library/jest-dom": "^5.17.0",
     "@testing-library/react": "^13.4.0",
     "@testing-library/user-event": "^13.5.0",
@@ -10,9 +13,13 @@
     "canvg": "^4.0.2",
     "changedpi": "^1.0.4",
     "convert-svg-to-png": "^0.6.4",
+    "jszip": "^3.10.1",
+    "papaparse": "^5.4.1",
     "react": "^18.3.1",
     "react-bootstrap": "^2.10.2",
     "react-dom": "^18.3.1",
+    "react-drag-drop-files": "^2.3.10",
+    "react-papaparse": "^4.4.0",
     "react-scripts": "5.0.1",
     "react-svg-to-image": "^3.0.0",
     "sharp": "^0.33.4",
@@ -22,7 +29,9 @@
     "start": "react-scripts start",
     "build": "react-scripts build",
     "test": "react-scripts test",
-    "eject": "react-scripts eject"
+    "eject": "react-scripts eject",
+    "predeploy": "npm run build",
+    "deploy": "gh-pages -d build"
   },
   "eslintConfig": {
     "extends": [
@@ -43,6 +52,7 @@
     ]
   },
   "devDependencies": {
+    "gh-pages": "^6.1.1",
     "tailwindcss": "^3.4.4"
   }
 }

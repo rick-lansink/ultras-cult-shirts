@@ -1,22 +1,36 @@
 import './App.css';
-import ShirtSvg from './ShirtSvg'
+import ShirtSvgPyro from './ShirtSvgPyro'
+import ShirtSvgMegafoon from './ShirtSvgMegafoon'
+import ShirtSvgMegafoonV2 from './ShirtSvgMegafoonV2'
 import { useState, useRef } from 'react';
 import Form from 'react-bootstrap/Form';
+import Image from 'react-bootstrap/Image';
 import { Canvg } from 'canvg';
 import 'bootstrap/dist/css/bootstrap.min.css';
 import Button from 'react-bootstrap/Button';
 import {changeDpiDataUrl} from "changedpi";
+import {FileUploader} from "react-drag-drop-files";
+import {ProgressBar, Spinner, Tab, Tabs} from "react-bootstrap";
+import Papa from "papaparse";
+import {renderToString} from "react-dom/server";
+import JSZip from "jszip";
+
+const fileTypes = ["JPG", "PNG", "GIF"];
 
 function App() {
     const [primaryColor, setPrimaryColor] = useState('#ff0000');
     const [secondaryColor, setSecondaryColor] = useState('#ffffff');
     const [tertiaryColor, setTertiaryColor] = useState('#ff00ff');
     const [quartiaryColor, setQuartiaryColor] = useState('#00ff00');
+    const [previewLogo, setPreviewLogo] = useState('');
     const [textColor, setTextColor] = useState('#ffffff');
     const [textBorderColor, setTextBorderColor] = useState('#ff0000');
     const [shirtText, setShirtText] = useState('Enschede');
     const [shirtNumber, setShirtNumber] = useState('1965');
-    const canvasRef = useRef(null);
+    const [loading, setLoading] = useState(false);
+    const [importedCsv, setImportedCsv] = useState(null);
+    const [shirtDesign, setShirtDesign] = useState('PYRO');
+
 
     function handlePrimaryColorChange(event) {
         setPrimaryColor(event.target.value)
@@ -50,144 +64,373 @@ function App() {
         setShirtNumber(event.target.value);
     }
 
-    async function downloadSvg() {
+    function handlePreviewLogoChange(file) {
+        setPreviewLogo(file);
+    }
+
+    function handleImportedCsvChange(event) {
+        setImportedCsv(event.target.files[0]);
+    }
+
+    function handleShirtDesignChange(event) {
+        setShirtDesign(event.target.value);
+    }
+
+    function handleCompleteShirtChange(shirtConfig) {
+        let svgReactElement
+        switch(shirtDesign) {
+            case 'PYRO': 
+                svgReactElement = ( <ShirtSvgPyro
+                    primaryColor={shirtConfig.primaryColor}
+                    secondaryColor={shirtConfig.secondaryColor}
+                    tertiaryColor={shirtConfig.tertiaryColor}
+                    quartiaryColor={shirtConfig.quartiaryColor}
+                    textColor={shirtConfig.textColor}
+                    textBorderColor={shirtConfig.textBorderColor}
+                    shirtText={shirtConfig.shirtText}
+                    shirtNumber={shirtConfig.shirtNumber}
+                />)
+                break;
+            case 'MEGAFOON': 
+                svgReactElement = ( <ShirtSvgMegafoon
+                    primaryColor={shirtConfig.primaryColor}
+                    secondaryColor={shirtConfig.secondaryColor}
+                    tertiaryColor={shirtConfig.tertiaryColor}
+                    quartiaryColor={shirtConfig.quartiaryColor}
+                    textColor={shirtConfig.textColor}
+                    textBorderColor={shirtConfig.textBorderColor}
+                    shirtText={shirtConfig.shirtText}
+                    shirtNumber={shirtConfig.shirtNumber}
+                />)
+                break;
+            case 'MEGAFOONV2':     
+                svgReactElement = ( <ShirtSvgMegafoonV2
+                    primaryColor={shirtConfig.primaryColor}
+                    secondaryColor={shirtConfig.secondaryColor}
+                    tertiaryColor={shirtConfig.tertiaryColor}
+                    quartiaryColor={shirtConfig.quartiaryColor}
+                    textColor={shirtConfig.textColor}
+                    textBorderColor={shirtConfig.textBorderColor}
+                    shirtText={shirtConfig.shirtText}
+                    shirtNumber={shirtConfig.shirtNumber}
+                />)
+                break;
+            
+        }
+        
+        return renderToString(svgReactElement);
+    }
+
+    async function setCsvData(parsedCsv) {
+        let imageArray = [];
+        await Promise.all(parsedCsv.data.map(async (shirtConfig, index) => {
+            if (
+                shirtConfig.shirtText &&
+                shirtConfig.shirtNumber &&
+                shirtConfig.primaryColor &&
+                shirtConfig.secondaryColor &&
+                shirtConfig.tertiaryColor &&
+                shirtConfig.quartiaryColor &&
+                shirtConfig.textColor &&
+                shirtConfig.textBorderColor
+            ) {
+                let svgElement = handleCompleteShirtChange(shirtConfig);
+                let imageData = await downloadSvg(svgElement, {shouldDownload: false});
+                imageArray.push({name: shirtConfig.shirtText, image: imageData});
+            }
+        }));
+        downloadZip(imageArray);
+    }
+
+    function b64toBlob(dataURI) {
+
+        var byteString = atob(dataURI.split(',')[1]);
+        var ab = new ArrayBuffer(byteString.length);
+        var ia = new Uint8Array(ab);
+
+        for (var i = 0; i < byteString.length; i++) {
+            ia[i] = byteString.charCodeAt(i);
+        }
+        return new Blob([ab], { type: 'image/jpeg' });
+    }
+
+    async function downloadZip(images){
+        const zip = new JSZip();
+
+        for (let i = 0; i < images.length; i++) {
+            const blob = b64toBlob(images[i].image);
+            zip.file(`ultras-cult-${images[i].name}.png`, blob)
+        }
+
+        const zipData = await zip.generateAsync({
+            type: "blob",
+            streamFiles: true,
+        });
+
+        const link = document.createElement("a");
+        link.href = window.URL.createObjectURL(zipData);
+        link.download = `ultras-cult-${Date.now()}`;
+        link.click();
+        setLoading(false);
+    }
+
+    function handleCsvImport() {
+        setLoading(true);
+        Papa.parse(importedCsv, {
+            header: true,
+            complete: setCsvData
+        });
+    }
+
+    function copyToClipboard() {
+        const stringToCopy = `${shirtText} \t ${shirtNumber} \t ${primaryColor} \t ${secondaryColor} \t ${tertiaryColor} \t ${quartiaryColor} \t ${textColor} \t ${textBorderColor}`;
+        navigator.clipboard.writeText(stringToCopy);
+    }
+
+    function downloadSvgDirectly() {
         let svgElement = document.getElementById('svg-download');
-        var serializer = new XMLSerializer();
-        var svgString = serializer.serializeToString(svgElement);
+        const serializer = new XMLSerializer();
+        if (!svgElement) { return; }
+        const svgString = serializer.serializeToString(svgElement);
+        downloadSvg(svgString, {shouldDownload: true});
+    }
+
+
+
+    async function downloadSvg(svgString, {shouldDownload}) {
         let canvasElement = document.createElement("canvas"); // Create a Canvas element.
 
-        canvasElement.width  = 2048;
-        canvasElement.height = 1300;
+        canvasElement.width  = 6144;
+        canvasElement.height = 3900;
         let ctx = canvasElement.getContext('2d');
         let canvasexport = await Canvg.fromString(ctx, svgString, {
         });
         canvasexport.start()
 
         let image = canvasElement.toDataURL("image/png", 1)
-        let highResImage = changeDpiDataUrl(image, 300).replace("image/png", "image/octet-stream");  // here is the most important part because if you dont replace you will get a DOM 18 exception.;
-        let anchor = document.createElement('a');
-        anchor.setAttribute('download', `ultras-cult-${shirtText}.png`);
-        anchor.setAttribute('href', highResImage);
-        anchor.click();
+        if (shouldDownload) {
+            let highResImage = changeDpiDataUrl(image, 300).replace("image/png", "image/octet-stream");  // here is the most important part because if you dont replace you will get a DOM 18 exception.;
+            let anchor = document.createElement('a');
+            anchor.setAttribute('download', `ultras-cult-${shirtText}.png`);
+            anchor.setAttribute('href', highResImage);
+            anchor.click();
+        } else {
+            return changeDpiDataUrl(image, 300);
+        }
+
     }
 
   return (
     <div className="App">
         <header className="App-header">
             <div>
-                <ShirtSvg
-                    primaryColor={primaryColor}
-                    secondaryColor={secondaryColor}
-                    tertiaryColor={tertiaryColor}
-                    quartiaryColor={quartiaryColor}
-                    textColor={textColor}
-                    textBorderColor={textBorderColor}
-                    shirtText={shirtText}
-                    shirtNumber={shirtNumber}
-                />
+                <div className="App-logo">
+                    {
+                        shirtDesign === "PYRO" && (
+                            <ShirtSvgPyro
+                                primaryColor={primaryColor}
+                                secondaryColor={secondaryColor}
+                                tertiaryColor={tertiaryColor}
+                                quartiaryColor={quartiaryColor}
+                                textColor={textColor}
+                                textBorderColor={textBorderColor}
+                                shirtText={shirtText}
+                                shirtNumber={shirtNumber}
+                            />
+                        )
+                    }
+                    {
+                        shirtDesign === "MEGAFOON" && (
+                            <ShirtSvgMegafoon
+                                primaryColor={primaryColor}
+                                secondaryColor={secondaryColor}
+                                tertiaryColor={tertiaryColor}
+                                quartiaryColor={quartiaryColor}
+                                textColor={textColor}
+                                textBorderColor={textBorderColor}
+                                shirtText={shirtText}
+                                shirtNumber={shirtNumber}
+                            />
+                        )
+                    }
+                    {
+                        shirtDesign === "MEGAFOONV2" && (
+                            <ShirtSvgMegafoonV2
+                                primaryColor={primaryColor}
+                                secondaryColor={secondaryColor}
+                                tertiaryColor={tertiaryColor}
+                                quartiaryColor={quartiaryColor}
+                                textColor={textColor}
+                                textBorderColor={textBorderColor}
+                                shirtText={shirtText}
+                                shirtNumber={shirtNumber}
+                            />
+                        )
+                    }
+
+                </div>
             </div>
             <div className="shirtForm">
-                <div>
-                    <Form.Label
-                        data-bs-theme="dark"
-                    >
-                        Kleurenpalette
-                    </Form.Label>
-                    <Form.Control
-                        type="color"
-                        id="primaryColor"
-                        value={primaryColor}
-                        onChange={handlePrimaryColorChange}
-                        data-bs-theme="dark"
-                    />
-                    <Form.Control
-                        type="color"
-                        id="secondaryColor"
-                        value={secondaryColor}
-                        onChange={handleSecondaryColorChange}
-                        data-bs-theme="dark"
-                    />
-                    <Form.Control
-                        type="color"
-                        id="tertiaryColor"
-                        value={tertiaryColor}
-                        onChange={handleTertiaryColorChange}
-                        data-bs-theme="dark"
-                    />
+                <Tabs data-bs-theme="dark">
+                    <Tab eventKey="single" title="Enkel">
+                        <div>
 
-                    <Form.Control
-                        type="color"
-                        id="quartiaryColor"
-                        value={quartiaryColor}
-                        onChange={handleQuartiaryColorChange}
-                        data-bs-theme="dark"
-                    />
-                    <Form.Label
-                        data-bs-theme="dark"
-                    >
-                        Tekstkleuren
-                    </Form.Label>
-                    <Form.Control
-                        type="color"
-                        id="textColor"
-                        value={textColor}
-                        onChange={handleTextColorChange}
-                        data-bs-theme="dark"
-                    />
+                            <Form.Label>
+                                Upload club logo
+                            </Form.Label>
+                            <FileUploader
+                                handleChange={handlePreviewLogoChange}
+                                name="file"
+                                label="Upload of sleep club logo"
+                                types={fileTypes}
+                            />
+                            {
+                                previewLogo && (
+                                    <Image src={URL.createObjectURL(previewLogo)} className="previewlogo"/>
+                                )
+                            }
+                            <Form.Label data-bs-theme="dark">
+                                Shirt design
+                            </Form.Label>
+                            <Form.Select 
+                                aria-label="Shirt design"
+                                data-bs-theme="dark"
+                                onChange={handleShirtDesignChange}
+                            >
+                                <option value="PYRO">Pyro</option>
+                                <option value="MEGAFOON">Megafoon</option>
+                                <option value="MEGAFOONV2">Megafoon - V2</option>
+                            </Form.Select>
+                            <Form.Label
+                                data-bs-theme="dark"
+                            >
+                                Kleurenpalette
+                            </Form.Label>
+                            <Form.Control
+                                type="color"
+                                id="primaryColor"
+                                value={primaryColor}
+                                onChange={handlePrimaryColorChange}
+                                data-bs-theme="dark"
+                            />
+                            <Form.Control
+                                type="color"
+                                id="secondaryColor"
+                                value={secondaryColor}
+                                onChange={handleSecondaryColorChange}
+                                data-bs-theme="dark"
+                            />
+                            <Form.Control
+                                type="color"
+                                id="tertiaryColor"
+                                value={tertiaryColor}
+                                onChange={handleTertiaryColorChange}
+                                data-bs-theme="dark"
+                            />
 
-                    <Form.Control
-                        type="color"
-                        id="textBorderColor"
-                        value={textBorderColor}
-                        onChange={handleTextBorderColorChange}
-                        data-bs-theme="dark"
-                    />
+                            <Form.Control
+                                type="color"
+                                id="quartiaryColor"
+                                value={quartiaryColor}
+                                onChange={handleQuartiaryColorChange}
+                                data-bs-theme="dark"
+                            />
+                            <Form.Label
+                                data-bs-theme="dark"
+                            >
+                                Tekstkleuren
+                            </Form.Label>
+                            <Form.Control
+                                type="color"
+                                id="textColor"
+                                value={textColor}
+                                onChange={handleTextColorChange}
+                                data-bs-theme="dark"
+                            />
+
+                            <Form.Control
+                                type="color"
+                                id="textBorderColor"
+                                value={textBorderColor}
+                                onChange={handleTextBorderColorChange}
+                                data-bs-theme="dark"
+                            />
 
 
+                        </div>
+                        <div>
+                            <Form.Label
+                                htmlFor="stadNaam"
+                                data-bs-theme="dark"
+                            >
+                                Stad- of clubnaam
+                            </Form.Label>
+                            <Form.Control
+                                type="text"
+                                id="stadNaam"
+                                value={shirtText}
+                                onChange={handleShirtTextChange}
+                                data-bs-theme="dark"
+                            />
+                        </div>
 
+                        <div>
+                            <Form.Label
+                                htmlFor="clubGetal"
+                                data-bs-theme="dark"
+                            >
+                                Kerngetal of jaartal
 
-                </div>
-                <div>
-                    <Form.Label
-                        htmlFor="stadNaam"
-                        data-bs-theme="dark"
-                    >
-                        Stad- of clubnaam
-                    </Form.Label>
-                    <Form.Control
-                        type="text"
-                        id="stadNaam"
-                        value={shirtText}
-                        onChange={handleShirtTextChange}
-                        data-bs-theme="dark"
-                    />
-                </div>
+                            </Form.Label>
+                            <Form.Control
+                                type="text"
+                                id="clubGetal"
+                                value={shirtNumber}
+                                onChange={handleSetShirtNumber}
+                                data-bs-theme="dark"
+                            />
+                        </div>
 
-                <div>
-                    <Form.Label
-                        htmlFor="clubGetal"
-                        data-bs-theme="dark"
-                    >
-                        Kerngetal of jaartal
+                        <div>
+                            <Button
+                                onClick={downloadSvgDirectly}
+                                variant="outline-success"
+                            >
+                                Download
+                            </Button>
+                            <Button
+                                variant="outline-primary"
+                                onClick={copyToClipboard}
+                            >
+                                Kopieer
+                            </Button>
+                        </div>
+                    </Tab>
+                    <Tab eventKey="batch" title="Batch">
+                        <Form.Group controlId="formFile" className="mb-3">
+                            <Form.Label>Batch shirts bestand uploaden</Form.Label>
+                            <Form.Control
+                                data-bs-theme="dark"
+                                type="file"
+                                onChange={handleImportedCsvChange}
+                            />
+                        </Form.Group>
+                        {
+                            loading && (
+                                <Spinner animation="border" role="status">
+                                    <span className="visually-hidden">Loading...</span>
+                                </Spinner>
+                            )
+                        }
+                        <Button
+                            variant="outline-primary"
+                            onClick={handleCsvImport}
+                        >
+                            Start conversie
+                        </Button>
+                    </Tab>
+                </Tabs>
 
-                    </Form.Label>
-                    <Form.Control
-                        type="text"
-                        id="clubGetal"
-                        value={shirtNumber}
-                        onChange={handleSetShirtNumber}
-                        data-bs-theme="dark"
-                    />
-                </div>
-
-                <div>
-                    <Button
-                        onClick={downloadSvg}
-                        variant="success"
-                    >
-                        Download
-                    </Button>
-                </div>
             </div>
         </header>
     </div>
