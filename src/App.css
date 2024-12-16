@@ -32,6 +32,11 @@
   display: flex;
   text-align: left;
   width: 30vw;
+
+  .form-check {
+
+    margin-top: 15px;
+  }
   > div {
     padding-top: 20px;
   }

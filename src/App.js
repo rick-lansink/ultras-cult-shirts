@@ -2,6 +2,7 @@ import './App.css';
 import ShirtSvgPyro from './ShirtSvgPyro'
 import ShirtSvgMegafoon from './ShirtSvgMegafoon'
 import ShirtSvgMegafoonV2 from './ShirtSvgMegafoonV2'
+import ShirtSvgSjaal from './ShirtSvgSjaal'
 import { useState, useRef } from 'react';
 import Form from 'react-bootstrap/Form';
 import Image from 'react-bootstrap/Image';
@@ -16,6 +17,7 @@ import {renderToString} from "react-dom/server";
 import JSZip from "jszip";
 
 const fileTypes = ["JPG", "PNG", "GIF"];
+const SHIRT_DESIGNS = ["PYRO", "MEGAFOON", "MEGAFOONV2", "SJAAL"]
 
 function App() {
     const [primaryColor, setPrimaryColor] = useState('#ff0000');
@@ -30,6 +32,7 @@ function App() {
     const [loading, setLoading] = useState(false);
     const [importedCsv, setImportedCsv] = useState(null);
     const [shirtDesign, setShirtDesign] = useState('PYRO');
+    const [downloadAll, setDownloadAll] = useState(true)
 
 
     function handlePrimaryColorChange(event) {
@@ -76,9 +79,14 @@ function App() {
         setShirtDesign(event.target.value);
     }
 
-    function handleCompleteShirtChange(shirtConfig) {
+    function handleDownloadAllChange(event) {
+        setDownloadAll(event.target.checked);
+    }
+
+    function handleCompleteShirtChange(shirtConfig, optionalShirtDesign) {
         let svgReactElement
-        switch(shirtDesign) {
+        let localShirtDesign = optionalShirtDesign || shirtDesign
+        switch(localShirtDesign) {
             case 'PYRO': 
                 svgReactElement = ( <ShirtSvgPyro
                     primaryColor={shirtConfig.primaryColor}
@@ -115,9 +123,21 @@ function App() {
                     shirtNumber={shirtConfig.shirtNumber}
                 />)
                 break;
+            case 'SJAAL': 
+                svgReactElement = ( <ShirtSvgSjaal
+                    primaryColor={shirtConfig.primaryColor}
+                    secondaryColor={shirtConfig.secondaryColor}
+                    tertiaryColor={shirtConfig.tertiaryColor}
+                    quartiaryColor={shirtConfig.quartiaryColor}
+                    textColor={shirtConfig.textColor}
+                    textBorderColor={shirtConfig.textBorderColor}
+                    shirtText={shirtConfig.shirtText}
+                    shirtNumber={shirtConfig.shirtNumber}
+                />)
+                break; 
             
         }
-        
+
         return renderToString(svgReactElement);
     }
 
@@ -141,6 +161,7 @@ function App() {
         }));
         downloadZip(imageArray);
     }
+
 
     function b64toBlob(dataURI) {
 
@@ -187,21 +208,52 @@ function App() {
         navigator.clipboard.writeText(stringToCopy);
     }
 
+    async function downloadMultipleSvgDirectly() {
+        let imageArray = [];
+        let localShirtConfig = {
+            primaryColor: primaryColor,
+            secondaryColor: secondaryColor,
+            tertiaryColor: tertiaryColor,
+            quartiaryColor: quartiaryColor,
+            textColor: textColor,
+            textBorderColor: textBorderColor,
+            shirtText: shirtText,
+            shirtNumber: shirtNumber
+        }
+
+       for await (const design of SHIRT_DESIGNS) {
+          let svgElement = handleCompleteShirtChange(localShirtConfig, design);
+          let imageData = await downloadSvg(svgElement, {shouldDownload: false});
+          imageArray.push({name: `${localShirtConfig.shirtText}-${design}`, image: imageData});
+        }
+        downloadZip(imageArray);
+    }
+
     function downloadSvgDirectly() {
-        let svgElement = document.getElementById('svg-download');
-        const serializer = new XMLSerializer();
-        if (!svgElement) { return; }
-        const svgString = serializer.serializeToString(svgElement);
-        downloadSvg(svgString, {shouldDownload: true});
+        if (downloadAll) {
+            downloadMultipleSvgDirectly();
+        } else {
+            let svgElement = document.getElementById('svg-download');
+            const serializer = new XMLSerializer();
+            if (!svgElement) { return; }
+            const svgString = serializer.serializeToString(svgElement);
+            downloadSvg(svgString, {shouldDownload: true});
+        }
+
     }
 
 
 
     async function downloadSvg(svgString, {shouldDownload}) {
         let canvasElement = document.createElement("canvas"); // Create a Canvas element.
+        if (shirtDesign == "MEGAFOON" || shirtDesign == "MEGAFOONV2") {
+            canvasElement.width  = 6144;
+            canvasElement.height = 4440;
+        } else {
+            canvasElement.width  = 6144;
+            canvasElement.height = 3900;
+        }
 
-        canvasElement.width  = 6144;
-        canvasElement.height = 3900;
         let ctx = canvasElement.getContext('2d');
         let canvasexport = await Canvg.fromString(ctx, svgString, {
         });
@@ -211,7 +263,7 @@ function App() {
         if (shouldDownload) {
             let highResImage = changeDpiDataUrl(image, 300).replace("image/png", "image/octet-stream");  // here is the most important part because if you dont replace you will get a DOM 18 exception.;
             let anchor = document.createElement('a');
-            anchor.setAttribute('download', `ultras-cult-${shirtText}.png`);
+            anchor.setAttribute('download', `ultras-cult-${shirtText}-${shirtDesign}.png`);
             anchor.setAttribute('href', highResImage);
             anchor.click();
         } else {
@@ -267,6 +319,20 @@ function App() {
                             />
                         )
                     }
+                    {
+                        shirtDesign === "SJAAL" && (
+                            <ShirtSvgSjaal
+                                primaryColor={primaryColor}
+                                secondaryColor={secondaryColor}
+                                tertiaryColor={tertiaryColor}
+                                quartiaryColor={quartiaryColor}
+                                textColor={textColor}
+                                textBorderColor={textBorderColor}
+                                shirtText={shirtText}
+                                shirtNumber={shirtNumber}
+                            />
+                        )
+                    }
 
                 </div>
             </div>
@@ -300,6 +366,7 @@ function App() {
                                 <option value="PYRO">Pyro</option>
                                 <option value="MEGAFOON">Megafoon</option>
                                 <option value="MEGAFOONV2">Megafoon - V2</option>
+                                <option value="SJAAL">Sjaal</option>
                             </Form.Select>
                             <Form.Label
                                 data-bs-theme="dark"
@@ -392,6 +459,16 @@ function App() {
                         </div>
 
                         <div>
+                        <Form.Check // prettier-ignore
+                            type="switch"
+                            data-bs-theme="dark"
+                            id="download-all-switch"
+                            label="Alle designs downloaden"
+                            value={downloadAll}
+                            checked={downloadAll}
+                            onChange={handleDownloadAllChange}
+
+                          />
                             <Button
                                 onClick={downloadSvgDirectly}
                                 variant="outline-success"
@@ -404,6 +481,7 @@ function App() {
                             >
                                 Kopieer
                             </Button>
+
                         </div>
                     </Tab>
                     <Tab eventKey="batch" title="Batch">
