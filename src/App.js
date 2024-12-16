@@ -32,7 +32,7 @@ function App() {
     const [loading, setLoading] = useState(false);
     const [importedCsv, setImportedCsv] = useState(null);
     const [shirtDesign, setShirtDesign] = useState('PYRO');
-    const [downloadAll, setDownloadAll] = useState(true)
+    const [downloadAll, setDownloadAll] = useState(false)
 
 
     function handlePrimaryColorChange(event) {
