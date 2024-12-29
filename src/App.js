@@ -3,6 +3,7 @@ import ShirtSvgPyro from './ShirtSvgPyro'
 import ShirtSvgMegafoon from './ShirtSvgMegafoon'
 import ShirtSvgMegafoonV2 from './ShirtSvgMegafoonV2'
 import ShirtSvgSjaal from './ShirtSvgSjaal'
+import ShirtSvgBadge from './ShirtSvgBadge'
 import { useState, useRef } from 'react';
 import Form from 'react-bootstrap/Form';
 import Image from 'react-bootstrap/Image';
@@ -17,7 +18,7 @@ import {renderToString} from "react-dom/server";
 import JSZip from "jszip";
 
 const fileTypes = ["JPG", "PNG", "GIF"];
-const SHIRT_DESIGNS = ["PYRO", "MEGAFOON", "MEGAFOONV2", "SJAAL"]
+const SHIRT_DESIGNS = ["PYRO", "MEGAFOON", "MEGAFOONV2", "SJAAL", 'BADGE']
 
 function App() {
     const [primaryColor, setPrimaryColor] = useState('#ff0000');
@@ -135,7 +136,17 @@ function App() {
                     shirtNumber={shirtConfig.shirtNumber}
                 />)
                 break; 
-            
+            case 'BADGE':
+                svgReactElement = ( <ShirtSvgBadge
+                    primaryColor={shirtConfig.primaryColor}
+                    secondaryColor={shirtConfig.secondaryColor}
+                    tertiaryColor={shirtConfig.tertiaryColor}
+                    quartiaryColor={shirtConfig.quartiaryColor}
+                    textColor={shirtConfig.textColor}
+                    textBorderColor={shirtConfig.textBorderColor}
+                    shirtText={shirtConfig.shirtText}
+                    shirtNumber={shirtConfig.shirtNumber}
+                />)
         }
 
         return renderToString(svgReactElement);
@@ -333,6 +344,20 @@ function App() {
                             />
                         )
                     }
+                    {
+                        shirtDesign === "BADGE" && (
+                            <ShirtSvgBadge
+                                primaryColor={primaryColor}
+                                secondaryColor={secondaryColor}
+                                tertiaryColor={tertiaryColor}
+                                quartiaryColor={quartiaryColor}
+                                textColor={textColor}
+                                textBorderColor={textBorderColor}
+                                shirtText={shirtText}
+                                shirtNumber={shirtNumber}
+                            />
+                        )
+                    }
 
                 </div>
             </div>
@@ -367,6 +392,7 @@ function App() {
                                 <option value="MEGAFOON">Megafoon</option>
                                 <option value="MEGAFOONV2">Megafoon - V2</option>
                                 <option value="SJAAL">Sjaal</option>
+                                <option value="BADGE">Badge</option>
                             </Form.Select>
                             <Form.Label
                                 data-bs-theme="dark"
