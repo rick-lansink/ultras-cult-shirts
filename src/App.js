@@ -16,6 +16,7 @@ import {ProgressBar, Spinner, Tab, Tabs} from "react-bootstrap";
 import Papa from "papaparse";
 import {renderToString} from "react-dom/server";
 import JSZip from "jszip";
+import ConvertDesign from './ConvertDesign';
 
 const fileTypes = ["JPG", "PNG", "GIF"];
 const SHIRT_DESIGNS = ["PYRO", "MEGAFOON", "MEGAFOONV2", "SJAAL", 'BADGE']
@@ -34,6 +35,7 @@ function App() {
     const [importedCsv, setImportedCsv] = useState(null);
     const [shirtDesign, setShirtDesign] = useState('PYRO');
     const [downloadAll, setDownloadAll] = useState(false)
+    const [activeFunction, setActiveFunction] = useState(null)
 
 
     function handlePrimaryColorChange(event) {
@@ -82,6 +84,14 @@ function App() {
 
     function handleDownloadAllChange(event) {
         setDownloadAll(event.target.checked);
+    }
+
+    function setActiveFunctionToDesign() {
+        setActiveFunction('DESIGN');
+    }
+
+    function setActiveFunctionToConvert() {
+        setActiveFunction('CONVERT');
     }
 
     function handleCompleteShirtChange(shirtConfig, optionalShirtDesign) {
@@ -286,258 +296,291 @@ function App() {
   return (
     <div className="App">
         <header className="App-header">
+            {
+                activeFunction == null && (
+                    <div className="function-picker">
+                        <h1>Ultras Cult</h1>
+                        <Button 
+                            variant="outline-primary"
+                            onClick={setActiveFunctionToDesign}
+                        >
+                            Design maken
+                        </Button>
+                        <Button 
+                            variant="outline-primary"
+                            onClick={setActiveFunctionToConvert}
+                        >
+                            Designs converteren
+                        </Button>
+                    </div>
+                )
+            }
+            {
+                activeFunction == "CONVERT" && (
+                    <ConvertDesign />
+                )
+            }
             <div>
-                <div className="App-logo">
-                    {
-                        shirtDesign === "PYRO" && (
-                            <ShirtSvgPyro
-                                primaryColor={primaryColor}
-                                secondaryColor={secondaryColor}
-                                tertiaryColor={tertiaryColor}
-                                quartiaryColor={quartiaryColor}
-                                textColor={textColor}
-                                textBorderColor={textBorderColor}
-                                shirtText={shirtText}
-                                shirtNumber={shirtNumber}
-                            />
-                        )
-                    }
-                    {
-                        shirtDesign === "MEGAFOON" && (
-                            <ShirtSvgMegafoon
-                                primaryColor={primaryColor}
-                                secondaryColor={secondaryColor}
-                                tertiaryColor={tertiaryColor}
-                                quartiaryColor={quartiaryColor}
-                                textColor={textColor}
-                                textBorderColor={textBorderColor}
-                                shirtText={shirtText}
-                                shirtNumber={shirtNumber}
-                            />
-                        )
-                    }
-                    {
-                        shirtDesign === "MEGAFOONV2" && (
-                            <ShirtSvgMegafoonV2
-                                primaryColor={primaryColor}
-                                secondaryColor={secondaryColor}
-                                tertiaryColor={tertiaryColor}
-                                quartiaryColor={quartiaryColor}
-                                textColor={textColor}
-                                textBorderColor={textBorderColor}
-                                shirtText={shirtText}
-                                shirtNumber={shirtNumber}
-                            />
-                        )
-                    }
-                    {
-                        shirtDesign === "SJAAL" && (
-                            <ShirtSvgSjaal
-                                primaryColor={primaryColor}
-                                secondaryColor={secondaryColor}
-                                tertiaryColor={tertiaryColor}
-                                quartiaryColor={quartiaryColor}
-                                textColor={textColor}
-                                textBorderColor={textBorderColor}
-                                shirtText={shirtText}
-                                shirtNumber={shirtNumber}
-                            />
-                        )
-                    }
-                    {
-                        shirtDesign === "BADGE" && (
-                            <ShirtSvgBadge
-                                primaryColor={primaryColor}
-                                secondaryColor={secondaryColor}
-                                tertiaryColor={tertiaryColor}
-                                quartiaryColor={quartiaryColor}
-                                textColor={textColor}
-                                textBorderColor={textBorderColor}
-                                shirtText={shirtText}
-                                shirtNumber={shirtNumber}
-                            />
-                        )
-                    }
-
-                </div>
-            </div>
-            <div className="shirtForm">
-                <Tabs data-bs-theme="dark">
-                    <Tab eventKey="single" title="Enkel">
-                        <div>
-
-                            <Form.Label>
-                                Upload club logo
-                            </Form.Label>
-                            <FileUploader
-                                handleChange={handlePreviewLogoChange}
-                                name="file"
-                                label="Upload of sleep club logo"
-                                types={fileTypes}
-                            />
-                            {
-                                previewLogo && (
-                                    <Image src={URL.createObjectURL(previewLogo)} className="previewlogo"/>
-                                )
-                            }
-                            <Form.Label data-bs-theme="dark">
-                                Shirt design
-                            </Form.Label>
-                            <Form.Select 
-                                aria-label="Shirt design"
-                                data-bs-theme="dark"
-                                onChange={handleShirtDesignChange}
-                            >
-                                <option value="PYRO">Pyro</option>
-                                <option value="MEGAFOON">Megafoon</option>
-                                <option value="MEGAFOONV2">Megafoon - V2</option>
-                                <option value="SJAAL">Sjaal</option>
-                                <option value="BADGE">Badge</option>
-                            </Form.Select>
-                            <Form.Label
-                                data-bs-theme="dark"
-                            >
-                                Kleurenpalette
-                            </Form.Label>
-                            <Form.Control
-                                type="color"
-                                id="primaryColor"
-                                value={primaryColor}
-                                onChange={handlePrimaryColorChange}
-                                data-bs-theme="dark"
-                            />
-                            <Form.Control
-                                type="color"
-                                id="secondaryColor"
-                                value={secondaryColor}
-                                onChange={handleSecondaryColorChange}
-                                data-bs-theme="dark"
-                            />
-                            <Form.Control
-                                type="color"
-                                id="tertiaryColor"
-                                value={tertiaryColor}
-                                onChange={handleTertiaryColorChange}
-                                data-bs-theme="dark"
-                            />
-
-                            <Form.Control
-                                type="color"
-                                id="quartiaryColor"
-                                value={quartiaryColor}
-                                onChange={handleQuartiaryColorChange}
-                                data-bs-theme="dark"
-                            />
-                            <Form.Label
-                                data-bs-theme="dark"
-                            >
-                                Tekstkleuren
-                            </Form.Label>
-                            <Form.Control
-                                type="color"
-                                id="textColor"
-                                value={textColor}
-                                onChange={handleTextColorChange}
-                                data-bs-theme="dark"
-                            />
-
-                            <Form.Control
-                                type="color"
-                                id="textBorderColor"
-                                value={textBorderColor}
-                                onChange={handleTextBorderColorChange}
-                                data-bs-theme="dark"
-                            />
-
-
-                        </div>
-                        <div>
-                            <Form.Label
-                                htmlFor="stadNaam"
-                                data-bs-theme="dark"
-                            >
-                                Stad- of clubnaam
-                            </Form.Label>
-                            <Form.Control
-                                type="text"
-                                id="stadNaam"
-                                value={shirtText}
-                                onChange={handleShirtTextChange}
-                                data-bs-theme="dark"
-                            />
-                        </div>
-
-                        <div>
-                            <Form.Label
-                                htmlFor="clubGetal"
-                                data-bs-theme="dark"
-                            >
-                                Kerngetal of jaartal
-
-                            </Form.Label>
-                            <Form.Control
-                                type="text"
-                                id="clubGetal"
-                                value={shirtNumber}
-                                onChange={handleSetShirtNumber}
-                                data-bs-theme="dark"
-                            />
-                        </div>
-
-                        <div>
-                        <Form.Check // prettier-ignore
-                            type="switch"
-                            data-bs-theme="dark"
-                            id="download-all-switch"
-                            label="Alle designs downloaden"
-                            value={downloadAll}
-                            checked={downloadAll}
-                            onChange={handleDownloadAllChange}
-
-                          />
-                            <Button
-                                onClick={downloadSvgDirectly}
-                                variant="outline-success"
-                            >
-                                Download
-                            </Button>
-                            <Button
-                                variant="outline-primary"
-                                onClick={copyToClipboard}
-                            >
-                                Kopieer
-                            </Button>
-
-                        </div>
-                    </Tab>
-                    <Tab eventKey="batch" title="Batch">
-                        <Form.Group controlId="formFile" className="mb-3">
-                            <Form.Label>Batch shirts bestand uploaden</Form.Label>
-                            <Form.Control
-                                data-bs-theme="dark"
-                                type="file"
-                                onChange={handleImportedCsvChange}
-                            />
-                        </Form.Group>
+            {
+                activeFunction === 'DESIGN' && (
+                    <div className="design-container">
+                    <div className="App-logo">
                         {
-                            loading && (
-                                <Spinner animation="border" role="status">
-                                    <span className="visually-hidden">Loading...</span>
-                                </Spinner>
+                            shirtDesign === "PYRO" && (
+                                <ShirtSvgPyro
+                                    primaryColor={primaryColor}
+                                    secondaryColor={secondaryColor}
+                                    tertiaryColor={tertiaryColor}
+                                    quartiaryColor={quartiaryColor}
+                                    textColor={textColor}
+                                    textBorderColor={textBorderColor}
+                                    shirtText={shirtText}
+                                    shirtNumber={shirtNumber}
+                                />
                             )
                         }
-                        <Button
-                            variant="outline-primary"
-                            onClick={handleCsvImport}
-                        >
-                            Start conversie
-                        </Button>
-                    </Tab>
-                </Tabs>
-
-            </div>
-        </header>
+                        {
+                            shirtDesign === "MEGAFOON" && (
+                                <ShirtSvgMegafoon
+                                    primaryColor={primaryColor}
+                                    secondaryColor={secondaryColor}
+                                    tertiaryColor={tertiaryColor}
+                                    quartiaryColor={quartiaryColor}
+                                    textColor={textColor}
+                                    textBorderColor={textBorderColor}
+                                    shirtText={shirtText}
+                                    shirtNumber={shirtNumber}
+                                />
+                            )
+                        }
+                        {
+                            shirtDesign === "MEGAFOONV2" && (
+                                <ShirtSvgMegafoonV2
+                                    primaryColor={primaryColor}
+                                    secondaryColor={secondaryColor}
+                                    tertiaryColor={tertiaryColor}
+                                    quartiaryColor={quartiaryColor}
+                                    textColor={textColor}
+                                    textBorderColor={textBorderColor}
+                                    shirtText={shirtText}
+                                    shirtNumber={shirtNumber}
+                                />
+                            )
+                        }
+                        {
+                            shirtDesign === "SJAAL" && (
+                                <ShirtSvgSjaal
+                                    primaryColor={primaryColor}
+                                    secondaryColor={secondaryColor}
+                                    tertiaryColor={tertiaryColor}
+                                    quartiaryColor={quartiaryColor}
+                                    textColor={textColor}
+                                    textBorderColor={textBorderColor}
+                                    shirtText={shirtText}
+                                    shirtNumber={shirtNumber}
+                                />
+                            )
+                        }
+                        {
+                            shirtDesign === "BADGE" && (
+                                <ShirtSvgBadge
+                                    primaryColor={primaryColor}
+                                    secondaryColor={secondaryColor}
+                                    tertiaryColor={tertiaryColor}
+                                    quartiaryColor={quartiaryColor}
+                                    textColor={textColor}
+                                    textBorderColor={textBorderColor}
+                                    shirtText={shirtText}
+                                    shirtNumber={shirtNumber}
+                                />
+                            )
+                        }
+    
+                    </div>
+                    <div className="shirtForm">
+                    <Tabs data-bs-theme="dark">
+                        <Tab eventKey="single" title="Enkel">
+                            <div>
+    
+                                <Form.Label>
+                                    Upload club logo
+                                </Form.Label>
+                                <FileUploader
+                                    handleChange={handlePreviewLogoChange}
+                                    name="file"
+                                    label="Upload of sleep club logo"
+                                    types={fileTypes}
+                                />
+                                {
+                                    previewLogo && (
+                                        <Image src={URL.createObjectURL(previewLogo)} className="previewlogo"/>
+                                    )
+                                }
+                                <Form.Label data-bs-theme="dark">
+                                    Shirt design
+                                </Form.Label>
+                                <Form.Select 
+                                    aria-label="Shirt design"
+                                    data-bs-theme="dark"
+                                    onChange={handleShirtDesignChange}
+                                >
+                                    <option value="PYRO">Pyro</option>
+                                    <option value="MEGAFOON">Megafoon</option>
+                                    <option value="MEGAFOONV2">Megafoon - V2</option>
+                                    <option value="SJAAL">Sjaal</option>
+                                    <option value="BADGE">Badge</option>
+                                </Form.Select>
+                                <Form.Label
+                                    data-bs-theme="dark"
+                                >
+                                    Kleurenpalette
+                                </Form.Label>
+                                <Form.Control
+                                    type="color"
+                                    id="primaryColor"
+                                    value={primaryColor}
+                                    onChange={handlePrimaryColorChange}
+                                    data-bs-theme="dark"
+                                />
+                                <Form.Control
+                                    type="color"
+                                    id="secondaryColor"
+                                    value={secondaryColor}
+                                    onChange={handleSecondaryColorChange}
+                                    data-bs-theme="dark"
+                                />
+                                <Form.Control
+                                    type="color"
+                                    id="tertiaryColor"
+                                    value={tertiaryColor}
+                                    onChange={handleTertiaryColorChange}
+                                    data-bs-theme="dark"
+                                />
+    
+                                <Form.Control
+                                    type="color"
+                                    id="quartiaryColor"
+                                    value={quartiaryColor}
+                                    onChange={handleQuartiaryColorChange}
+                                    data-bs-theme="dark"
+                                />
+                                <Form.Label
+                                    data-bs-theme="dark"
+                                >
+                                    Tekstkleuren
+                                </Form.Label>
+                                <Form.Control
+                                    type="color"
+                                    id="textColor"
+                                    value={textColor}
+                                    onChange={handleTextColorChange}
+                                    data-bs-theme="dark"
+                                />
+    
+                                <Form.Control
+                                    type="color"
+                                    id="textBorderColor"
+                                    value={textBorderColor}
+                                    onChange={handleTextBorderColorChange}
+                                    data-bs-theme="dark"
+                                />
+    
+    
+                            </div>
+                            <div>
+                                <Form.Label
+                                    htmlFor="stadNaam"
+                                    data-bs-theme="dark"
+                                >
+                                    Stad- of clubnaam
+                                </Form.Label>
+                                <Form.Control
+                                    type="text"
+                                    id="stadNaam"
+                                    value={shirtText}
+                                    onChange={handleShirtTextChange}
+                                    data-bs-theme="dark"
+                                />
+                            </div>
+    
+                            <div>
+                                <Form.Label
+                                    htmlFor="clubGetal"
+                                    data-bs-theme="dark"
+                                >
+                                    Kerngetal of jaartal
+    
+                                </Form.Label>
+                                <Form.Control
+                                    type="text"
+                                    id="clubGetal"
+                                    value={shirtNumber}
+                                    onChange={handleSetShirtNumber}
+                                    data-bs-theme="dark"
+                                />
+                            </div>
+    
+                            <div>
+                            <Form.Check // prettier-ignore
+                                type="switch"
+                                data-bs-theme="dark"
+                                id="download-all-switch"
+                                label="Alle designs downloaden"
+                                value={downloadAll}
+                                checked={downloadAll}
+                                onChange={handleDownloadAllChange}
+    
+                              />
+                                <Button
+                                    onClick={downloadSvgDirectly}
+                                    variant="outline-success"
+                                >
+                                    Download
+                                </Button>
+                                <Button
+                                    variant="outline-primary"
+                                    onClick={copyToClipboard}
+                                >
+                                    Kopieer
+                                </Button>
+    
+                            </div>
+                        </Tab>
+                        <Tab eventKey="batch" title="Batch">
+                            <Form.Group controlId="formFile" className="mb-3">
+                                <Form.Label>Batch shirts bestand uploaden</Form.Label>
+                                <Form.Control
+                                    data-bs-theme="dark"
+                                    type="file"
+                                    onChange={handleImportedCsvChange}
+                                />
+                            </Form.Group>
+                            {
+                                loading && (
+                                    <Spinner animation="border" role="status">
+                                        <span className="visually-hidden">Loading...</span>
+                                    </Spinner>
+                                )
+                            }
+                            <Button
+                                variant="outline-primary"
+                                onClick={handleCsvImport}
+                            >
+                                Start conversie
+                            </Button>
+                        </Tab>
+                    </Tabs>
+    
+                </div>
+                 </div>
+                )
+            }
+           
+            
     </div>
+
+</header>
+</div>
   );
 }
 
